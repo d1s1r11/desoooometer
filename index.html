@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Desometer</title>
+  <style>
+    body {
+      font-family: 'Comic Sans MS', cursive;
+      background: linear-gradient(to right, #ffecd2, #fcb69f);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+    }
+    .emoji {
+      font-size: 4rem;
+      margin-top: 1rem;
+    }
+    .thermometer {
+      width: 50px;
+      height: 200px;
+      background: lightgray;
+      border-radius: 25px;
+      margin: 1rem auto;
+      position: relative;
+    }
+    .level {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      border-radius: 25px;
+    }
+    input[type="password"] {
+      width: 80%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      background-color: #ff7f50;
+      border: none;
+      color: white;
+      font-size: 1rem;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="login-container">
+    <h1>Desometer Login</h1>
+    <input type="password" id="password" placeholder="Passwort eingeben">
+    <button onclick="login()">Login</button>
+    <p id="error-message" style="color: red; display: none;">Falsches Passwort. Versuch es nochmal.</p>
+  </div>
+
+  <div class="container" id="mood-container" style="display: none;">
+    <h1 id="user-name">Desometer</h1>
+    <div class="emoji" id="moodEmoji">😐</div>
+    <div class="thermometer">
+      <div class="level" id="thermoLevel" style="height: 50%; background-color: gold;"></div>
+    </div>
+    <div id="moodSliderContainer" style="display: none;">
+      <input type="range" id="moodSlider" min="0" max="3" value="1" style="width: 100%;">
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyATmv0Pe5sIvu6PtWhV1bdfVHi0MhO2OW0",
+      authDomain: "desometer1.firebaseapp.com",
+      databaseURL: "https://desometer1-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "desometer1",
+      storageBucket: "desometer1.appspot.com",
+      messagingSenderId: "619102462725",
+      appId: "1:619102462725:web:e800986c68440f8bda8d6c",
+      measurementId: "G-Z6LP8QJH00"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const moods = [
+      { emoji: "😠", color: "red", height: "25%" },
+      { emoji: "😐", color: "gold", height: "50%" },
+      { emoji: "😢", color: "lightblue", height: "75%" },
+      { emoji: "🥳", color: "lightgreen", height: "100%" }
+    ];
+
+    const moodSlider = document.getElementById('moodSlider');
+    const moodEmoji = document.getElementById('moodEmoji');
+    const thermoLevel = document.getElementById('thermoLevel');
+    const errorMessage = document.getElementById('error-message');
+    const loginContainer = document.getElementById('login-container');
+    const moodContainer = document.getElementById('mood-container');
+    const moodSliderContainer = document.getElementById('moodSliderContainer');
+    const userName = document.getElementById('user-name');
+
+    function updateMood(value) {
+      const mood = moods[value];
+      moodEmoji.textContent = mood.emoji;
+      thermoLevel.style.backgroundColor = mood.color;
+      thermoLevel.style.height = mood.height;
+    }
+
+    function login() {
+      const password = document.getElementById('password').value;
+      if (password === '230324') {
+        loginContainer.style.display = 'none';
+        moodContainer.style.display = 'block';
+        db.ref('mood/value').get().then(snapshot => {
+          if (snapshot.exists()) {
+            const value = snapshot.val();
+            moodSlider.value = value;
+            updateMood(value);
+          }
+        });
+
+        moodSlider.addEventListener('input', () => {
+          const value = moodSlider.value;
+          updateMood(value);
+          db.ref('mood').set({ value: parseInt(value) });
+        });
+
+        db.ref('mood/value').on('value', (snapshot) => {
+          const value = snapshot.val();
+          if (value !== null) {
+            updateMood(value);
+          }
+        });
+        
+        userName.textContent = "Desi";
+        moodSliderContainer.style.display = 'block'; // Mood slider für Desi anzeigen
+      } else if (password === 'tim230324') {
+        loginContainer.style.display = 'none';
+        moodContainer.style.display = 'block';
+        db.ref('mood/value').get().then(snapshot => {
+          if (snapshot.exists()) {
+            const value = snapshot.val();
+            updateMood(value);
+          }
+        });
+
+        db.ref('mood/value').on('value', (snapshot) => {
+          const value = snapshot.val();
+          if (value !== null) {
+            updateMood(value);
+          }
+        });
+
+        userName.textContent = "Tim";
+        moodSliderContainer.style.display = 'none'; // Kein Slider für Tim
+      } else {
+        errorMessage.style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>
